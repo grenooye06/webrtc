@@ -1,3 +1,4 @@
+
 const Toast = swal.mixin({
 	toast: true,
 	position: "top-right",
@@ -193,26 +194,53 @@ async function init({ action, id, peer }) {
 		const mediaStream = await getMedia();
 		// If the user denies
 		if (!mediaStream) return location.reload();
-		const url = `${peer.id}`;
-		new swal({
-			title: "Copy this meeting ID and then send it to someone else",
-			input: "text",
-			inputValue: url,
-			inputAttributes: { readonly: true },
-			inputPlaceholder: "Copy this",
-			cancelButtonText: "No thanks",
-			showCancelButton: false,
-			confirmButtonText: `<span class="iconify" data-icon="akar-icons:copy"></span> Copy it`,
-			showCloseButton: true,
-			focusConfirm: true
-		}).then(async ({value}) => {
-			if (value !== true) return;
-			navigator.clipboard.writeText(url);
-			await Toast.fire({
-				icon: "success",
-				title: "Copied!"
-			});
-		});
+		
+const url = `${location.href}?id=${peer.id}`;
+console.log("URL to copy:", url); // Log the URL to be copied
+
+// Create the email subject and body
+const emailTitle = "Meeting URL";
+const emailBody = `Here is the link to join the meeting, click here:\n${url}`; // Use %0D%0A for a new line
+
+// Use `encodeURIComponent` to ensure the URL is formatted correctly
+const mailtoLink = `mailto:?subject=${encodeURIComponent(emailTitle)}&body=${encodeURIComponent(emailBody)}`;
+
+// Open the email client immediately
+window.location.href = mailtoLink;
+
+// Optional: If you still want to show a modal with the URL for user reference
+new swal({
+    title: "Copy this meeting URL to your clipboard:",
+    html: `<input type="text" id="copyUrl" value="${url}" readonly style="width: 80%; margin-right: 10px;">
+           <br><br><button id="copyButton" style="padding: 6px 12px; border: none; background-color: #007bff; color: white; cursor: pointer;">
+           <span class="iconify" data-icon="akar-icons:copy" data-inline="false"></span> Copy
+           </button>`,
+    showConfirmButton: false,
+    showCancelButton: false,
+    showCloseButton: true,
+    focusConfirm: false
+}).then(() => {
+    // Modal closed
+});
+
+// Copy button functionality remains unchanged
+document.addEventListener('click', async (event) => {
+    if (event.target && event.target.id === 'copyButton') {
+        const copyText = document.getElementById("copyUrl").value;
+        try {
+            await navigator.clipboard.writeText(copyText);
+            console.log("URL copied to clipboard:", copyText); // Log success
+            await Toast.fire({
+                icon: "success",
+                title: "Copied meeting URL to clipboard!"
+            });
+        } catch (err) {
+            console.error("Failed to copy URL to clipboard:", err); // Log any errors
+        }
+    }
+});
+
+
 		addStream(mediaStream, true);
 		console.log("Got media stream");
 
